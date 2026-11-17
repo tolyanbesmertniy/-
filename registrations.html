@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Хакатон Хаб — Мои регистрации</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Верхняя навигационная панель -->
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a href="index.html" class="brand">
+        <span class="brand-badge">Х</span>
+        <span class="brand-name">Хакатон Хаб</span>
+      </a>
+
+      <nav class="nav-tabs">
+        <a href="index.html" class="tab-item">📅 Афиша</a>
+        <a href="registrations.html" class="tab-item active">
+          🎟️ Мои регистрации
+          <span class="nav-counter" id="nav-reg-count">0</span>
+        </a>
+      </nav>
+
+      <!-- Блок аккаунта и баланса Шабурят -->
+      <div class="user-panel" id="user-panel"></div>
+    </div>
+  </header>
+
+  <main class="container main-wrapper">
+
+    <section id="view-registrations" class="screen-content active">
+      <div class="page-header">
+        <div>
+          <div class="eyebrow">ТВОИ ПЛАНЫ</div>
+          <h1 class="page-title">Мои регистрации</h1>
+          <p class="page-subtitle">Подтверди посещение на площадке, чтобы получить +10 Шабурят</p>
+        </div>
+
+        <div class="segmented-control">
+          <button class="segment-btn active" data-tab="upcoming" id="seg-upcoming">Предстоящие • 0</button>
+          <button class="segment-btn" data-tab="past" id="seg-past">Прошедшие</button>
+        </div>
+      </div>
+
+      <div class="alert-banner" id="reg-alert-banner">
+        <div class="alert-icon">🪙</div>
+        <div>
+          <div class="alert-title">Получай Шабурята за участие</div>
+          <div class="alert-sub">За каждое подтверждённое посещение начисляется +10 баллов (лимит сервиса — 20 баллов в неделю)</div>
+        </div>
+      </div>
+
+      <div class="month-label" id="reg-month-label">НОЯБРЬ 2026</div>
+
+      <!-- Сетка регистраций -->
+      <div id="registrations-list" class="events-grid"></div>
+
+      <div class="empty-promo">
+        <div class="empty-promo-title">Есть время для чего-то нового?</div>
+        <a href="index.html" class="empty-promo-link">
+          <span>Найти ещё события →</span>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Модальное окно авторизации -->
+  <div class="modal-backdrop" id="auth-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <div class="eyebrow">COLLEGE PLATFORM ID</div>
+          <h2 class="modal-title">Вход в аккаунт</h2>
+        </div>
+        <button class="modal-close" id="close-auth-modal">✕</button>
+      </div>
+      <p class="modal-subtitle">Единая учётная запись и кошелёк бонусов «Шабурята»</p>
+
+      <form id="auth-form" class="auth-form">
+        <div class="form-group">
+          <label for="auth-name">Имя и фамилия</label>
+          <input type="text" id="auth-name" placeholder="Например: Алексей Смирнов" required />
+        </div>
+        <div class="form-group">
+          <label for="auth-id">Номер студенческого билета</label>
+          <input type="text" id="auth-id" placeholder="Например: ИТ-2401" required />
+        </div>
+        <button type="submit" class="btn-cta">Войти или создать аккаунт</button>
+      </form>
+
+      <div class="demo-accounts">
+        <div class="demo-label">Быстрый вход в тестовый аккаунт:</div>
+        <div class="demo-list">
+          <button type="button" class="demo-btn" data-name="Мария Иванова" data-id="ИТ-2305">Мария Иванова (ИТ-2305)</button>
+          <button type="button" class="demo-btn" data-name="Дмитрий Соколов" data-id="ПМ-2412">Дмитрий Соколов (ПМ-2412)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно кошелька Шабурят -->
+  <div class="modal-backdrop" id="wallet-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <div class="eyebrow">ЕДИНЫЙ КОШЕЛЁК</div>
+          <h2 class="modal-title">Мои Шабурята</h2>
+        </div>
+        <button class="modal-close" id="close-wallet-modal">✕</button>
+      </div>
+
+      <div class="wallet-summary">
+        <div class="wallet-balance-box">
+          <span class="wallet-balance-label">Текущий баланс</span>
+          <span class="wallet-balance-value" id="wallet-balance-num">0 🪙</span>
+        </div>
+        <div class="wallet-limits">
+          <div class="limit-row">
+            <span>Лимит Хакатон Хаба за неделю:</span>
+            <strong id="wallet-service-limit">0 / 20</strong>
+          </div>
+          <div class="limit-row">
+            <span>Общий недельный лимит:</span>
+            <strong id="wallet-total-limit">0 / 60</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="wallet-rules-note">
+        +10 Шабурят за подтверждённое посещение мероприятия. Оплата до 30% заказа в «Кампус Фуд».
+      </div>
+
+      <h3 class="history-title">История начислений</h3>
+      <div class="history-list" id="wallet-history-list"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
