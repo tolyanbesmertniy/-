@@ -3,40 +3,60 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Кампус — Агрегатор студенческих мероприятий</title>
+  <title>Хакатон Хаб — Афиша мероприятий</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <div class="phone-frame">
-    <!-- Статус-бар -->
-    <div class="status-bar">
-      <span>9:41</span>
-      <div class="status-icons">
-        <span>•••ll</span>
-        <span>🔋</span>
-      </div>
+  <!-- Верхняя навигационная панель -->
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a href="index.html" class="brand" id="brand-logo">
+        <span class="brand-badge">Х</span>
+        <span class="brand-name">Хакатон Хаб</span>
+      </a>
+
+      <nav class="nav-tabs">
+        <a href="index.html" class="tab-item active">📅 Афиша</a>
+        <a href="registrations.html" class="tab-item">
+          🎟️ Мои регистрации
+          <span class="nav-counter" id="nav-reg-count">0</span>
+        </a>
+      </nav>
+
+      <!-- Блок аккаунта и баланса Шабурят -->
+      <div class="user-panel" id="user-panel"></div>
     </div>
+  </header>
+
+  <main class="container main-wrapper">
 
     <!-- ЭКРАН 1: АФИША -->
-    <div id="view-feed" class="screen-content active">
-      <div class="eyebrow">КАМПУС / СОБЫТИЯ</div>
-      <h1 class="page-title">Будь в моменте</h1>
-      <p class="page-subtitle">Встречи, после которых есть что рассказать</p>
-
-      <div class="search-box">
-        <svg width="16" height="16" fill="none" stroke="#8f9bb3" stroke-width="2" viewBox="0 0 24 24">
-          <circle cx="11" cy="11" r="8"></circle>
-          <path d="m21 21-4.3-4.3"></path>
-        </svg>
-        <input type="text" id="search-input" placeholder="Найти событие" />
+    <section id="view-feed" class="screen-content active">
+      <div class="page-header">
+        <div>
+          <div class="eyebrow">ХАКАТОН ХАБ / СОБЫТИЯ</div>
+          <h1 class="page-title">Будь в моменте</h1>
+          <p class="page-subtitle">Посещай мероприятия и получай +10 Шабурят за каждое подтверждённое посещение</p>
+        </div>
       </div>
 
-      <div class="chips-row" id="category-chips">
-        <button class="chip active" data-category="all">Все</button>
-        <button class="chip" data-category="Лекция">Лекции</button>
-        <button class="chip" data-category="Митап">Митапы</button>
-        <button class="chip" data-category="Спорт">Спорт</button>
+      <div class="controls-bar">
+        <div class="search-box">
+          <svg width="16" height="16" fill="none" stroke="#8f9bb3" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path>
+          </svg>
+          <input type="text" id="search-input" placeholder="Найти событие, лекцию или организатора..." />
+        </div>
+
+        <div class="chips-row" id="category-chips">
+          <button class="chip active" data-category="all">Все</button>
+          <button class="chip" data-category="Хакатон">Хакатоны</button>
+          <button class="chip" data-category="Лекция">Лекции</button>
+          <button class="chip" data-category="Митап">Митапы</button>
+          <button class="chip" data-category="Спорт">Спорт</button>
+        </div>
       </div>
 
       <div class="section-header">
@@ -44,122 +64,162 @@
         <span class="section-meta">16–20 ноября</span>
       </div>
 
-      <!-- Контейнер для карточек событий (рендерится из script.js) -->
-      <div id="events-list"></div>
-    </div>
+      <div id="events-list" class="events-grid"></div>
+    </section>
 
     <!-- ЭКРАН 2: ДЕТАЛИ СОБЫТИЯ -->
-    <div id="view-details" class="screen-content">
+    <section id="view-details" class="screen-content">
       <div class="nav-header">
-        <button class="back-btn" id="btn-back" aria-label="Назад">‹</button>
-        <span class="nav-title">Событие</span>
-        <span class="nav-spacer"></span>
+        <button class="back-btn" id="btn-back">← Назад к афише</button>
       </div>
 
-      <div class="hero-banner" id="detail-banner">
-        <div class="hero-tag" id="detail-tag">ЛЕКЦИЯ / ТЕХНОЛОГИИ</div>
-        <h1 class="hero-title" id="detail-title">ИИ: что будет после хайпа</h1>
-        <div class="hero-bottom">
-          <span class="badge-free" id="detail-entry">Вход свободный</span>
-          <span class="hero-date" id="detail-short-date">17.11</span>
-        </div>
-      </div>
-
-      <div class="info-list">
-        <div class="info-row">
-          <div class="info-icon">📅</div>
-          <div>
-            <div class="info-main" id="detail-date">17 ноября, вторник</div>
-            <div class="info-sub" id="detail-time">18:30–20:00</div>
-          </div>
-        </div>
-        <div class="info-row">
-          <div class="info-icon">📍</div>
-          <div>
-            <div class="info-main" id="detail-location">Корпус А, аудитория 301</div>
-            <div class="info-sub" id="detail-address">Университетская, 12</div>
-          </div>
-        </div>
-        <div class="info-row">
-          <div class="info-icon">👥</div>
-          <div>
-            <div class="info-main" id="detail-organizer">IT-клуб кампуса</div>
-            <div class="info-sub">Организатор</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="about-block">
-        <h3>О событии</h3>
-        <p id="detail-description"></p>
-      </div>
-
-      <div class="reminder-card">
-        <div class="reminder-top">
-          <div class="reminder-left">
-            <span>🔔</span>
-            <div>
-              <div class="reminder-title">Не пропусти начало</div>
-              <div class="reminder-sub">Напомним за день и за час</div>
+      <div class="details-layout">
+        <div class="details-main">
+          <div class="hero-banner" id="detail-banner">
+            <div class="hero-tag" id="detail-tag">ЛЕКЦИЯ / ТЕХНОЛОГИИ</div>
+            <h1 class="hero-title" id="detail-title">ИИ: что будет после хайпа</h1>
+            <div class="hero-bottom">
+              <div class="hero-badges">
+                <span class="badge-free" id="detail-entry">Вход свободный</span>
+                <span class="badge-bonus">+10 Шабурят</span>
+              </div>
+              <span class="hero-date" id="detail-short-date">17.11</span>
             </div>
           </div>
-          <label class="switch">
-            <input type="checkbox" id="detail-reminder-toggle" checked />
-            <span class="slider"></span>
-          </label>
+
+          <div class="about-block">
+            <h3>О событии</h3>
+            <p id="detail-description"></p>
+          </div>
         </div>
-        <div class="reminder-note" id="reminder-status-text">Локальные уведомления на устройстве</div>
+
+        <aside class="details-sidebar">
+          <div class="info-card">
+            <div class="info-list">
+              <div class="info-row">
+                <div class="info-icon">📅</div>
+                <div>
+                  <div class="info-main" id="detail-date">17 ноября, вторник</div>
+                  <div class="info-sub" id="detail-time">18:30–20:00</div>
+                </div>
+              </div>
+              <div class="info-row">
+                <div class="info-icon">📍</div>
+                <div>
+                  <div class="info-main" id="detail-location">Корпус А, аудитория 301</div>
+                  <div class="info-sub" id="detail-address">Университетская, 12</div>
+                </div>
+              </div>
+              <div class="info-row">
+                <div class="info-icon">👥</div>
+                <div>
+                  <div class="info-main" id="detail-organizer">IT-клуб</div>
+                  <div class="info-sub">Организатор</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="reminder-card">
+              <div class="reminder-top">
+                <div class="reminder-left">
+                  <span>🔔</span>
+                  <div>
+                    <div class="reminder-title">Не пропусти начало</div>
+                    <div class="reminder-sub">Напомним за день и за час</div>
+                  </div>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="detail-reminder-toggle" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="reminder-note" id="reminder-status-text">Локальные уведомления в браузере</div>
+            </div>
+
+            <button class="btn-cta" id="detail-cta-btn">
+              <span id="detail-cta-text">Записаться</span>
+              <span class="arrow" id="detail-cta-arrow">→</span>
+            </button>
+            <div class="cta-caption" id="detail-cta-caption">Бонус +10 Шабурят начислится после подтверждения посещения</div>
+          </div>
+        </aside>
       </div>
+    </section>
 
-      <button class="btn-cta" id="detail-cta-btn">
-        <span id="detail-cta-text">Записаться</span>
-        <span class="arrow" id="detail-cta-arrow">→</span>
-      </button>
-      <div class="cta-caption" id="detail-cta-caption">Событие появится в «Моих регистрациях»</div>
-    </div>
+  </main>
 
-    <!-- ЭКРАН 3: МОИ РЕГИСТРАЦИИ -->
-    <div id="view-registrations" class="screen-content">
-      <div class="eyebrow">ТВОИ ПЛАНЫ</div>
-      <h1 class="page-title">Мои регистрации</h1>
-      <p class="page-subtitle">Всё интересное уже в твоём расписании</p>
-
-      <div class="segmented-control">
-        <button class="segment-btn active" data-tab="upcoming" id="seg-upcoming">Предстоящие • 1</button>
-        <button class="segment-btn" data-tab="past" id="seg-past">Прошедшие</button>
-      </div>
-
-      <div class="alert-banner" id="reg-alert-banner">
-        <div class="alert-icon">🔔</div>
+  <!-- Модальное окно авторизации -->
+  <div class="modal-backdrop" id="auth-modal">
+    <div class="modal-card">
+      <div class="modal-header">
         <div>
-          <div class="alert-title">Ты ничего не пропустишь</div>
-          <div class="alert-sub">Напомним за день и за час до начала</div>
+          <div class="eyebrow">COLLEGE PLATFORM ID</div>
+          <h2 class="modal-title">Вход в аккаунт</h2>
+        </div>
+        <button class="modal-close" id="close-auth-modal">✕</button>
+      </div>
+      <p class="modal-subtitle">Единая учётная запись и кошелёк бонусов «Шабурята»</p>
+
+      <form id="auth-form" class="auth-form">
+        <div class="form-group">
+          <label for="auth-name">Имя и фамилия</label>
+          <input type="text" id="auth-name" placeholder="Например: Алексей Смирнов" required />
+        </div>
+        <div class="form-group">
+          <label for="auth-id">Номер студенческого билета</label>
+          <input type="text" id="auth-id" placeholder="Например: ИТ-2401" required />
+        </div>
+        <button type="submit" class="btn-cta">Войти или создать аккаунт</button>
+      </form>
+
+      <div class="demo-accounts">
+        <div class="demo-label">Быстрый вход в тестовый аккаунт:</div>
+        <div class="demo-list">
+          <button type="button" class="demo-btn" data-name="Мария Иванова" data-id="ИТ-2305">Мария Иванова (ИТ-2305)</button>
+          <button type="button" class="demo-btn" data-name="Дмитрий Соколов" data-id="ПМ-2412">Дмитрий Соколов (ПМ-2412)</button>
         </div>
       </div>
-
-      <div class="month-label" id="reg-month-label">НОЯБРЬ 2026</div>
-
-      <!-- Список регистраций -->
-      <div id="registrations-list"></div>
-
-      <div class="empty-promo">
-        <div class="empty-promo-title">Есть время для чего-то нового?</div>
-        <a href="#" class="empty-promo-link" id="link-find-more">
-          <span>Найти ещё события</span>
-          <span>→</span>
-        </a>
-      </div>
-    </div>
-
-    <!-- Всплывающее уведомление (Toast) -->
-    <div class="toast" id="toast"></div>
-
-    <!-- Нижняя панель навигации -->
-    <div class="tab-bar">
-      <div class="tab-item active" data-target="feed">📅 Афиша</div>
-      <div class="tab-item" data-target="registrations">🎟️ Мои регистрации</div>
     </div>
   </div>
+
+  <!-- Модальное окно кошелька Шабурят -->
+  <div class="modal-backdrop" id="wallet-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <div class="eyebrow">ЕДИНЫЙ КОШЕЛЁК</div>
+          <h2 class="modal-title">Мои Шабурята</h2>
+        </div>
+        <button class="modal-close" id="close-wallet-modal">✕</button>
+      </div>
+
+      <div class="wallet-summary">
+        <div class="wallet-balance-box">
+          <span class="wallet-balance-label">Текущий баланс</span>
+          <span class="wallet-balance-value" id="wallet-balance-num">0 🪙</span>
+        </div>
+        <div class="wallet-limits">
+          <div class="limit-row">
+            <span>Лимит Хакатон Хаба за неделю:</span>
+            <strong id="wallet-service-limit">0 / 20</strong>
+          </div>
+          <div class="limit-row">
+            <span>Общий недельный лимит:</span>
+            <strong id="wallet-total-limit">0 / 60</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="wallet-rules-note">
+        +10 Шабурят за подтверждённое посещение мероприятия. Оплата до 30% заказа в «Кампус Фуд».
+      </div>
+
+      <h3 class="history-title">История начислений</h3>
+      <div class="history-list" id="wallet-history-list"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
 
   <script src="script.js"></script>
 </body>
