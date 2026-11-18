@@ -107,12 +107,16 @@ const BONUS_PER_VISIT = 10;
 const SERVICE_WEEKLY_LIMIT = 20;
 const GLOBAL_WEEKLY_LIMIT = 60;
 
-// Хранилище пользователей (College Platform ID)
-const STORAGE_USERS_KEY = 'college_platform_users';
-const STORAGE_CURRENT_USER_KEY = 'college_platform_current_user';
+// Хранилище пользователей (ключ — уникальная связка Имя + Группа)
+const STORAGE_USERS_KEY = 'college_platform_users_v2';
+const STORAGE_CURRENT_USER_KEY = 'college_platform_current_user_v2';
 
 let usersDB = {};
-let currentUserId = null;
+let currentUserKey = null;
+
+function makeUserKey(name, group) {
+  return name.trim().toLowerCase() + '__' + group.trim().toUpperCase();
+}
 
 function loadStorage() {
   try {
@@ -125,10 +129,12 @@ function loadStorage() {
   }
 
   // Предзаполним два тестовых аккаунта, если база пустая
-  if (!usersDB['ИТ-2305']) {
-    usersDB['ИТ-2305'] = {
-      id: 'ИТ-2305',
+  const demo1Key = makeUserKey('Мария Иванова', '1ИС-2-24');
+  if (!usersDB[demo1Key]) {
+    usersDB[demo1Key] = {
+      key: demo1Key,
       name: 'Мария Иванова',
+      group: '1ИС-2-24',
       balance: 24,
       weeklyServiceEarned: 0,
       weeklyTotalEarned: 14,
@@ -142,10 +148,12 @@ function loadStorage() {
     };
   }
 
-  if (!usersDB['ПМ-2412']) {
-    usersDB['ПМ-2412'] = {
-      id: 'ПМ-2412',
+  const demo2Key = makeUserKey('Дмитрий Соколов', '2ПМ-1-23');
+  if (!usersDB[demo2Key]) {
+    usersDB[demo2Key] = {
+      key: demo2Key,
       name: 'Дмитрий Соколов',
+      group: '2ПМ-1-23',
       balance: 10,
       weeklyServiceEarned: 10,
       weeklyTotalEarned: 10,
@@ -157,9 +165,9 @@ function loadStorage() {
     };
   }
 
-  const savedId = localStorage.getItem(STORAGE_CURRENT_USER_KEY);
-  if (savedId && usersDB[savedId]) {
-    currentUserId = savedId;
+  const savedKey = localStorage.getItem(STORAGE_CURRENT_USER_KEY);
+  if (savedKey && usersDB[savedKey]) {
+    currentUserKey = savedKey;
   }
 
   saveStorage();
@@ -167,15 +175,15 @@ function loadStorage() {
 
 function saveStorage() {
   localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(usersDB));
-  if (currentUserId) {
-    localStorage.setItem(STORAGE_CURRENT_USER_KEY, currentUserId);
+  if (currentUserKey) {
+    localStorage.setItem(STORAGE_CURRENT_USER_KEY, currentUserKey);
   } else {
     localStorage.removeItem(STORAGE_CURRENT_USER_KEY);
   }
 }
 
 function getCurrentUser() {
-  return currentUserId ? usersDB[currentUserId] : null;
+  return currentUserKey ? usersDB[currentUserKey] : null;
 }
 
 let currentCategory = 'all';
@@ -227,7 +235,7 @@ function renderUserPanel() {
   panelEl.appendChild(bonusPill);
 
   const userChip = createEl('div', 'user-chip');
-  userChip.appendChild(createEl('span', 'user-name-text', user.name));
+  userChip.appendChild(createEl('span', 'user-name-text', user.name + ' (' + user.group + ')'));
 
   const logoutBtn = createEl('button', 'btn-logout', 'Выйти');
   logoutBtn.addEventListener('click', logoutUser);
@@ -263,15 +271,18 @@ function closeAuthModal() {
   if (modal) modal.classList.remove('open');
 }
 
-function loginUser(name, studentId) {
-  const cleanId = studentId.trim().toUpperCase();
+function loginUser(name, group) {
+  const cleanGroup = group.trim().toUpperCase();
   const cleanName = name.trim();
-  if (!cleanId || !cleanName) return;
+  if (!cleanGroup || !cleanName) return;
 
-  if (!usersDB[cleanId]) {
-    usersDB[cleanId] = {
-      id: cleanId,
+  const key = makeUserKey(cleanName, cleanGroup);
+
+  if (!usersDB[key]) {
+    usersDB[key] = {
+      key: key,
       name: cleanName,
+      group: cleanGroup,
       balance: 0,
       weeklyServiceEarned: 0,
       weeklyTotalEarned: 0,
@@ -281,17 +292,17 @@ function loginUser(name, studentId) {
     };
     showToast('Создан новый аккаунт! Кошелёк Шабурят подключён');
   } else {
-    showToast('Добро пожаловать, ' + usersDB[cleanId].name + '!');
+    showToast('Добро пожаловать, ' + usersDB[key].name + '!');
   }
 
-  currentUserId = cleanId;
+  currentUserKey = key;
   saveStorage();
   closeAuthModal();
   refreshAllUI();
 }
 
 function logoutUser() {
-  currentUserId = null;
+  currentUserKey = null;
   saveStorage();
   showToast('Вы вышли из аккаунта');
   refreshAllUI();
@@ -310,17 +321,15 @@ function openWalletModal() {
     user.weeklyServiceEarned + ' / ' + SERVICE_WEEKLY_LIMIT + ' Шабурят';
   document.getElementById('wallet-total-limit').textContent =
     user.weeklyTotalEarned + ' / ' + GLOBAL_WEEKLY_LIMIT + ' Шабурят';
-
-  const historyListEl = document.getElementById('wallet-history-list');
-  historyListEl.innerHTML = '';
-
-  if (!user.history || user.history.length === 0) {
-    historyListEl.appendChild(
-      createEl('div', 'empty-state', 'Пока нет начислений. Посетите мероприятие, чтобы получить +10 Шабурят!')
-    );
-  } else {
-    user.history.forEach(item => {
-      const row = createEl('div', 'history-item');
+const historyListEl = document.getElementById('wallet-history-list');
+historyListEl.innerHTML = '';
+if (!user.history || user.history.length === 0) {
+historyListEl.appendChild(
+createEl('div', 'empty-state', 'Пока нет начислений. Посетите мероприятие, чтобы получить +10 Шабурят!')
+);
+} else {
+user.history.forEach(item => {
+const row = createEl('div', 'history-item');
 const left = createEl('div');
 left.appendChild(createEl('div', 'history-item-title', item.title));
 left.appendChild(createEl('div', 'history-item-date', item.date));
@@ -370,7 +379,7 @@ if (detailsView && detailsView.classList.contains('active') && selectedEventId =
 openEventDetails(eventId);
 }
 }
-// Подтверждение посещения и начисление +10 Шабурят по правилам колледжа
+// Подтверждение посещения и начисление +10 Шабурят
 function confirmAttendance(eventId, e) {
 if (e) e.stopPropagation();
 const user = getCurrentUser();
@@ -380,17 +389,14 @@ return;
 }
 const event = EVENTS_DATA.find(item => item.id === eventId);
 if (!event) return;
-// Правило: за одно действие нельзя получить баллы повторно
 if (user.attendedIds.includes(eventId)) {
 showToast('Посещение этого события уже подтверждено');
 return;
 }
-// Правило: лимит сервиса «Хакатон Хаб» — 20 Шабурят в неделю
 if (user.weeklyServiceEarned + BONUS_PER_VISIT > SERVICE_WEEKLY_LIMIT) {
 showToast('Достигнут недельный лимит сервиса Хакатон Хаб (20 Шабурят)');
 return;
 }
-// Правило: общий недельный потолок — 60 Шабурят в неделю
 if (user.weeklyTotalEarned + BONUS_PER_VISIT > GLOBAL_WEEKLY_LIMIT) {
 showToast('Достигнут общий недельный лимит начислений (60 Шабурят)');
 return;
@@ -521,7 +527,6 @@ metaList.appendChild(createEl('div', 'meta-item', '📅 ' + event.dateOnly + ' �
 metaList.appendChild(createEl('div', 'meta-item', '📍 ' + event.location));
 topWrap.appendChild(metaList);
 topWrap.appendChild(createEl('div', 'organizer reg-organizer', event.organizer));
-// Кнопка подтверждения посещения для начисления Шабурят
 if (!event.isPast) {
 if (isAttended) {
 const doneBtn = createEl('button', 'btn-confirm-visit done', '🪙 +10 Шабурят начислено');
@@ -555,7 +560,7 @@ card.appendChild(topWrap);
 card.appendChild(actions);
 return card;
 }
-// Рендер страницы «Мои регистрации» (на registrations.html)
+// Рендер страницы «Мои регистрации»
 function renderRegistrations() {
 const registrationsListEl = document.getElementById('registrations-list');
 if (!registrationsListEl) return;
@@ -603,14 +608,14 @@ if (authForm) {
 authForm.addEventListener('submit', e => {
 e.preventDefault();
 const nameVal = document.getElementById('auth-name').value;
-const idVal = document.getElementById('auth-id').value;
-loginUser(nameVal, idVal);
+const groupVal = document.getElementById('auth-group').value;
+loginUser(nameVal, groupVal);
 });
 }
 // Кнопки быстрого входа в демо-аккаунты
 document.querySelectorAll('.demo-btn').forEach(btn => {
 btn.addEventListener('click', () => {
-loginUser(btn.dataset.name, btn.dataset.id);
+loginUser(btn.dataset.name, btn.dataset.group);
 });
 });
 // Закрытие модальных окон
