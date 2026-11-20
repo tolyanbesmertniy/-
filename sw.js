@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hackathon-hub-v1';
+const CACHE_NAME = 'hackathon-hub-v3';
 const ASSETS_TO_CACHE = Array.of(
   './',
   './index.html',
@@ -33,3 +33,4 @@ self.addEventListener('fetch', event => {
     })
   );
 });
+
