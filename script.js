@@ -1,4 +1,4 @@
-// База данных событий
+// База данных событий с точным временем старта (timestamp) для локальных уведомлений
 const EVENTS_DATA = Array.of(
   {
     id: 1,
@@ -12,6 +12,7 @@ const EVENTS_DATA = Array.of(
     dateFull: '17 ноября, вторник',
     timeRange: '18:30–20:00',
     shortDate: '17.11',
+    timestamp: '2026-11-17T18:30:00',
     location: 'Корпус А, ауд. 301',
     locationFull: 'Корпус А, аудитория 301',
     address: 'Университетская, 12',
@@ -32,6 +33,7 @@ const EVENTS_DATA = Array.of(
     dateFull: '18 ноября, среда',
     timeRange: '17:00–19:30',
     shortDate: '18.11',
+    timestamp: '2026-11-18T17:00:00',
     location: 'Коворкинг «Точка»',
     locationFull: 'Коворкинг «Точка», 2 этаж',
     address: 'Студенческий проспект, 5',
@@ -52,6 +54,7 @@ const EVENTS_DATA = Array.of(
     dateFull: '19 ноября, четверг',
     timeRange: '16:00–19:00',
     shortDate: '19.11',
+    timestamp: '2026-11-19T16:00:00',
     location: 'Спорткомплекс, зал 1',
     locationFull: 'Спорткомплекс, игровой зал №1',
     address: 'Спортивная, 8',
@@ -72,6 +75,7 @@ const EVENTS_DATA = Array.of(
     dateFull: '20 ноября, пятница',
     timeRange: '10:00–20:00',
     shortDate: '20.11',
+    timestamp: '2026-11-20T10:00:00',
     location: 'Актовый зал',
     locationFull: 'Главный корпус, Актовый зал',
     address: 'Университетская, 12',
@@ -92,6 +96,7 @@ const EVENTS_DATA = Array.of(
     dateFull: '10 ноября, вторник',
     timeRange: '18:00–19:30',
     shortDate: '10.11',
+    timestamp: '2026-11-10T18:00:00',
     location: 'Корпус Б, ауд. 105',
     locationFull: 'Корпус Б, аудитория 105',
     address: 'Университетская, 14',
@@ -370,6 +375,7 @@ user.registeredIds = user.registeredIds.filter(id => id !== eventId);
 showToast('Регистрация на «' + event.title + '» отменена');
 } else {
 user.registeredIds.push(eventId);
+scheduleEventNotifications(event);
 showToast('Вы записаны! Подтвердите посещение, чтобы получить +10 Шабурят');
 }
 saveStorage();
@@ -446,28 +452,62 @@ card.appendChild(topWrap);
 card.appendChild(footer);
 return card;
 }
-// Рендер афиши (на index.html)
+// Рендер афиши со строгой группировкой мероприятий по датам
 function renderFeed() {
-const eventsListEl = document.getElementById('events-list');
-if (!eventsListEl) return;
-eventsListEl.innerHTML = '';
-const filtered = EVENTS_DATA.filter(event => {
-if (event.isPast) return false;
-const matchesCat = currentCategory === 'all' || event.category === currentCategory;
-const matchesSearch =
-event.title.toLowerCase().includes(searchQuery) ||
-event.shortDesc.toLowerCase().includes(searchQuery) ||
-event.organizer.toLowerCase().includes(searchQuery);
-return matchesCat && matchesSearch;
-});
-if (filtered.length === 0) {
-eventsListEl.appendChild(createEl('div', 'empty-state', 'По вашему запросу событий не найдено'));
-return;
+  const eventsListEl = document.getElementById('events-list');
+  if (!eventsListEl) return;
+
+  eventsListEl.innerHTML = '';
+  // Убираем класс сетки у внешнего контейнера, так как сетка теперь внутри каждой даты
+  eventsListEl.className = '';
+
+  const filtered = EVENTS_DATA.filter(event => {
+    if (event.isPast) return false;
+    const matchesCat = currentCategory === 'all' || event.category === currentCategory;
+    const matchesSearch =
+      event.title.toLowerCase().includes(searchQuery) ||
+      event.shortDesc.toLowerCase().includes(searchQuery) ||
+      event.organizer.toLowerCase().includes(searchQuery);
+    return matchesCat && matchesSearch;
+  });
+
+  if (filtered.length === 0) {
+    eventsListEl.appendChild(createEl('div', 'empty-state', 'По вашему запросу событий не найдено'));
+    return;
+  }
+
+  // Группировка отфильтрованных событий по дате
+  const groupsMap = {};
+  const orderedDates = Array.of();
+
+  filtered.forEach(event => {
+    const dateKey = event.dateFull;
+    if (!groupsMap[dateKey]) {
+      groupsMap[dateKey] = Array.of();
+      orderedDates.push(dateKey);
+    }
+    groupsMap[dateKey].push(event);
+  });
+
+  // Отрисовка каждой группы дат
+  orderedDates.forEach(dateKey => {
+    const section = createEl('div', 'date-group-section');
+
+    const header = createEl('div', 'date-group-header');
+    header.appendChild(createEl('h3', 'date-group-title', '📅 ' + dateKey));
+    header.appendChild(createEl('div', 'date-group-line'));
+    section.appendChild(header);
+
+    const grid = createEl('div', 'events-grid');
+    groupsMap[dateKey].forEach(event => {
+      grid.appendChild(buildFeedCard(event));
+    });
+
+    section.appendChild(grid);
+    eventsListEl.appendChild(section);
+  });
 }
-filtered.forEach(event => {
-eventsListEl.appendChild(buildFeedCard(event));
-});
-}
+
 // Открытие деталей события
 function openEventDetails(eventId) {
 const detailsView = document.getElementById('view-details');
@@ -598,6 +638,99 @@ updateCounters();
 renderFeed();
 renderRegistrations();
 }
+
+// ================= СИСТЕМНЫЕ ЛОКАЛЬНЫЕ УВЕДОМЛЕНИЯ (NOTIFICATION API) =================
+let scheduledTimers = Array.of();
+
+function sendSystemNotification(title, bodyText) {
+  if (!('Notification' in window)) {
+    showToast(title + ': ' + bodyText);
+    return;
+  }
+
+  if (Notification.permission === 'granted') {
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(title, {
+          body: bodyText,
+          tag: 'hackathon-hub-reminder'
+        });
+      });
+    } else {
+      new Notification(title, { body: bodyText });
+    }
+  } else {
+    showToast(title + ': ' + bodyText);
+  }
+}
+
+function scheduleEventNotifications(event) {
+  const toggleEl = document.getElementById('detail-reminder-toggle');
+  if (toggleEl && !toggleEl.checked) return;
+
+  if (!('Notification' in window)) return;
+
+  const setupTimers = () => {
+    const startMs = new Date(event.timestamp).getTime();
+    const nowMs = Date.now();
+
+    const dayBeforeMs = startMs - 24 * 60 * 60 * 1000;
+    const hourBeforeMs = startMs - 60 * 60 * 1000;
+
+    if (dayBeforeMs > nowMs) {
+      const t1 = setTimeout(() => {
+        sendSystemNotification(
+          'Завтра: ' + event.title,
+          'Напоминаем за день до начала! Встречаемся ' + event.dateList + ' (' + event.location + ').'
+        );
+      }, Math.min(dayBeforeMs - nowMs, 2147483647));
+      scheduledTimers.push(t1);
+    }
+
+    if (hourBeforeMs > nowMs) {
+      const t2 = setTimeout(() => {
+        sendSystemNotification(
+          'Через 1 час: ' + event.title,
+          'Мероприятие начнётся в ' + event.timeRange + '. Место: ' + event.location
+        );
+      }, Math.min(hourBeforeMs - nowMs, 2147483647));
+      scheduledTimers.push(t2);
+    }
+  };
+
+  if (Notification.permission === 'granted') {
+    setupTimers();
+  } else if (Notification.permission !== 'denied') {
+    Notification.requestPermission().then(permission => {
+      if (permission === 'granted') {
+        setupTimers();
+      }
+    });
+  }
+}
+
+// Экспорт локальной базы данных в файл database.json
+function exportDatabaseJSON() {
+  const dbSnapshot = {
+    exportedAt: new Date().toISOString(),
+    platform: 'College Platform — Хакатон Хаб',
+    currentUser: currentUserKey,
+    users: usersDB,
+    events: EVENTS_DATA
+  };
+
+  const blob = new Blob(Array.of(JSON.stringify(dbSnapshot, null, 2)), {
+    type: 'application/json'
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'hackathon_hub_database.json';
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast('Локальная база данных (JSON) сохранена на устройство');
+}
+
 // Инициализация
 document.addEventListener('DOMContentLoaded', () => {
 loadStorage();
@@ -610,6 +743,46 @@ e.preventDefault();
 const nameVal = document.getElementById('auth-name').value;
 const groupVal = document.getElementById('auth-group').value;
 loginUser(nameVal, groupVal);
+  // Добавляем кнопку «Проверить уведомление сейчас» в блок напоминаний
+  const reminderCard = document.querySelector('.reminder-card');
+  if (reminderCard) {
+    const testNotifyBtn = createEl(
+      'button',
+      'btn-test-notify',
+      '🔔 Проверить системное уведомление сейчас'
+    );
+    testNotifyBtn.type = 'button';
+    testNotifyBtn.addEventListener('click', () => {
+      const ev = EVENTS_DATA.find(item => item.id === selectedEventId) || EVENTS_DATA.at(0);
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        Notification.requestPermission().then(perm => {
+          if (perm === 'granted') {
+            sendSystemNotification(
+              'Напоминание (за 1 час): ' + ev.title,
+              'Начало в ' + ev.timeRange + ' • ' + ev.location + '. Не забудьте отметить посещение (+10 Шабурят)!'
+            );
+          } else {
+            showToast('Разрешите уведомления в настройках браузера для системного пуша');
+          }
+        });
+      } else {
+        sendSystemNotification(
+          'Напоминание (за 1 час): ' + ev.title,
+          'Начало в ' + ev.timeRange + ' • ' + ev.location + '. Не забудьте отметить посещение (+10 Шабурят)!'
+        );
+      }
+    });
+    reminderCard.appendChild(testNotifyBtn);
+  }
+
+  // Добавляем кнопку скачивания JSON-базы в модальное окно кошелька
+  const walletCard = document.querySelector('#wallet-modal .modal-card');
+  if (walletCard) {
+    const exportBtn = createEl('button', 'btn-export-db', '💾 Скачать локальную базу данных (.json)');
+    exportBtn.type = 'button';
+    exportBtn.addEventListener('click', exportDatabaseJSON);
+    walletCard.appendChild(exportBtn);
+  }
 });
 }
 // Кнопки быстрого входа в демо-аккаунты
